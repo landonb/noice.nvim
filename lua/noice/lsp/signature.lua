@@ -93,7 +93,7 @@ function M.on_signature(_, result, ctx, config)
       end
       return
     end
-    Docs.show(message, config.stay)
+    Docs.show(message, config.stay, ctx.bufnr)
   end
 end
 M.on_signature = Util.protect(M.on_signature)

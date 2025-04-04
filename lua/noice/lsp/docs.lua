@@ -12,12 +12,15 @@ M._messages = {}
 ---@type number?
 M._autohide = nil
 
-function M.autohide()
+---@param bufnr? number buffer number
+function M.autohide(bufnr)
   if not M._autohide then
     M._autohide = vim.api.nvim_create_autocmd({ "CursorMoved", "CursorMovedI", "InsertEnter" }, {
       group = vim.api.nvim_create_augroup("noice_lsp_docs", { clear = true }),
       callback = function()
-        vim.defer_fn(M.on_close, 10)
+        vim.defer_fn(function()
+          M.on_close(bufnr)
+        end, 10)
       end,
     })
   end
@@ -33,10 +36,13 @@ function M.get(kind)
   return M._messages[kind]
 end
 
-function M.on_close()
+---@param msg_bufnr? number buffer number
+function M.on_close(msg_bufnr)
   for _, message in pairs(M._messages) do
     -- close the message if we're not in it's buffer (focus)
-    local keep = message:on_buf(vim.api.nvim_get_current_buf()) or (message.opts.stay and message.opts.stay())
+    local cur_bufnr = vim.api.nvim_get_current_buf()
+    local keep = (msg_bufnr == cur_bufnr or vim.startswith(vim.bo[cur_bufnr].filetype, "noice"))
+      and (message:on_buf(cur_bufnr) or (message.opts.stay and message.opts.stay()))
     if not keep then
       M.hide(message)
     end
@@ -64,8 +70,9 @@ end
 
 ---@param message NoiceMessage
 ---@param stay? fun():boolean
-function M.show(message, stay)
-  M.autohide()
+---@param bufnr? number buffer number
+function M.show(message, stay, bufnr)
+  M.autohide(bufnr)
   message.opts.timeout = 100
   message.opts.keep = function()
     return true
