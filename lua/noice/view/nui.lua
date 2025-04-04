@@ -286,7 +286,9 @@ function NuiView:show()
 
   vim.bo[self._nui.bufnr].modifiable = true
   self:render(self._nui.bufnr)
-  vim.bo[self._nui.bufnr].modifiable = false
+  if not self._opts.buf_options or not self._opts.buf_options.modifiable then
+    vim.bo[self._nui.bufnr].modifiable = false
+  end
 
   self._nui:show()
   if not self._nui.winid then
